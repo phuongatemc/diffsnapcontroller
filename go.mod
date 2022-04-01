@@ -5,11 +5,12 @@ module k8s.io/differentialsnapshot
 go 1.16
 
 require (
-	k8s.io/api v0.0.0-20220330051021-b754a94214be
-	k8s.io/apimachinery v0.0.0-20220330050810-00f071187c12
-	k8s.io/client-go v0.0.0-20220330051330-b1e85f6f0092
-	k8s.io/code-generator v0.0.0-20220330050606-8f17de063761
+	k8s.io/api v0.18.2
+	k8s.io/apimachinery v0.18.2
+	k8s.io/client-go v0.18.2
+	k8s.io/code-generator v0.18.2
 	k8s.io/klog/v2 v2.60.1
+	sigs.k8s.io/controller-tools v0.4.1 // indirect
 )
 
 replace (

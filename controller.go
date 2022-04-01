@@ -260,15 +260,21 @@ func (c *Controller) syncHandler(key string) error {
 
 		return err
 	}
+	// TODO: add processing GetChangedBlocks here
+	klog.Infof("Processing GetChangedBlocks %s", getChangedBlocks.Name)
+	getChangedBlocks.Status.State = "Success"
+	err = c.updateGetChangedBlocksStatus(getChangedBlocks)
+	if err != nil {
+		return err
+	}
 
 	c.recorder.Event(getChangedBlocks, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
 
 func (c *Controller) updateGetChangedBlocksStatus(
-	getChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks, deployment *appsv1.Deployment) error {
+	getChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks) error {
 	getChangedBlocksCopy := getChangedBlocks.DeepCopy()
-	getChangedBlocksCopy.Status.State = "Success"
 	_, err := c.sampleclientset.DifferentialsnapshotV1alpha1().GetChangedBlockses(
 		getChangedBlocks.Namespace).UpdateStatus(context.TODO(), getChangedBlocksCopy, metav1.UpdateOptions{})
 	return err
