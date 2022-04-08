@@ -5,13 +5,14 @@ module example.com/differentialsnapshot
 go 1.16
 
 require (
-	github.com/aws/aws-sdk-go v1.43.45 // indirect
+	github.com/aws/aws-sdk-go v1.43.45
+	google.golang.org/grpc v1.36.1
+	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.18.2
 	k8s.io/client-go v0.18.2
 	k8s.io/code-generator v0.18.2
 	k8s.io/klog/v2 v2.60.1
-	sigs.k8s.io/controller-tools v0.4.1 // indirect
 )
 
 replace (
