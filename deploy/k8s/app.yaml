@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: diffsnap-block
+  namespace: diffsnap
+  labels:
+    app: diffsnap
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+  volumeMode: Block
+  storageClassName: ebs-csi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: diffsnap-client
+  namespace: diffsnap
+  labels:
+    app: diffsnap
+spec:
+  containers:
+  - name: writer
+    image: debian
+    command: ["sleep"]
+    args: ["7200"]
+    volumeDevices:
+    - name: raw
+      devicePath: /dev/xvda
+  - name: ioping
+    image: hpestorage/ioping
+    command: ["ioping"]
+    args: ["/dev/xvda"]
+    volumeDevices:
+    - name: raw
+      devicePath: /dev/xvda
+  volumes:
+  - name: raw
+    persistentVolumeClaim:
+      claimName: diffsnap-block
