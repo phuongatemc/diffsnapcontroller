@@ -1,7 +1,8 @@
 # AWS EBS CSI Driver
 
 This document provides instructions on how to deploy the EBS CSI driver and
-the CSI snapshot controller on an EKS cluster.
+the CSI snapshot controller on an EKS cluster. It also demonstrates an example
+to use a pod to write random data into an EBS volume via block PVC.
 
 Information on how to set up an EKS cluster with the appropriate IAM permissions
 can be found [here](eks.md).
