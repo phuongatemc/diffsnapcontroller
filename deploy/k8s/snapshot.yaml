@@ -1,0 +1,11 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  generateName: diffsnap-
+  namespace: diffsnap
+  labels:
+    app: diffsnap
+spec:
+  volumeSnapshotClassName: ebs-csi
+  source:
+    persistentVolumeClaimName: diffsnap-block
