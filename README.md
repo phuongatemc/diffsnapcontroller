@@ -1,42 +1,54 @@
 # Differential Snapshot Controller
 
-<<<<<<< HEAD
-This is a prototype that implements the controller for GetChangedBlocks API
+This repository contains the source of the differential snapshot controller
+prototype.
 
-# Prerequisite:
-- AWS EKS: See instruction in deploy/eks.md and sample in deploy/k8s
-- AWS CSI Driver: See instruction in deploy/README.md
+Prerequisites:
 
-# Build:
+* Go
+* Docker
+
+To compile the controller Go binary locally:
 
 ```sh
-go build -o diffsnapcontroller .
+make compile
 ```
 
-# Deploy:
-
-Currently we have not yet have the docker container image for this controller yet so follow the steps below to deploy an Ubuntu pod and copy the binary there to run:
+This will produce a local binary named `diffsnap-controller`. To run it:
 
 ```sh
-kubectl create ns testns
-kubectl apply -f artifacts/examples/controller-rbac.yaml
+./diffsnap-controller
+```
+
+To build and push the controller's image:
+
+```sh
+make build
+
+make push
+```
+
+The image name and tag can be overridden using the `IMAGE_NAME` and `IMAGE_TAG`
+variables.
+
+To deploy to Kubernetes:
+
+```sh
 kubectl apply -f artifacts/examples/differentialsnapshot.example.com_getchangedblocks.yaml
-kubectl apply -f artifacts/examples/testpod.yaml
-kubectl cp diffsnapcontroller -n testns phtest:/root
+
+kubectl apply -f deploy/controller/ns.yaml
+
+kubectl apply -f deploy/controller/rbac.yaml
+
+kubectl apply -f deploy/controller/deploy.yaml
 ```
 
-Also copy additional files for AWS such as credential, config etc. as needed to the pod.
+The controller will be deployed to the new `diffsnap` namespace.
 
-# Run:
+An example of the GetChangedBlock custom resource can be found in
+`artifacts/examples/getchangedblocks.yaml`.
 
-```sh
-kubectl exec -it -n testns phtest /root/diffsnapcontroller
-```
+## On AWS EKS
 
-# Create GetChangedBlock CR:
-
-See the example GetChangedBlock CR in the file artifacts/examples/getchangedblocks.yaml
-You can edit it and run command below to create it.
-```sh
-kubectl apply -f artifacts/examples/getchangedblocks.yaml
-```
+Instructions on how to set up an EKS cluster with the CSI snapshot controller
+and EBS CSI driver can be found in the `deploy/eks/README.md` file.
