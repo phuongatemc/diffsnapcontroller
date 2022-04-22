@@ -1,5 +1,6 @@
 # Differential Snapshot Controller
 
+<<<<<<< HEAD
 This is a prototype that implements the controller for GetChangedBlocks API
 
 # Prerequisite:
@@ -34,7 +35,7 @@ kubectl exec -it -n testns phtest /root/diffsnapcontroller
 
 # Create GetChangedBlock CR:
 
-See the example GetChangedBlock CR in the file artifacts/examples/getchangedblocks.yaml  
+See the example GetChangedBlock CR in the file artifacts/examples/getchangedblocks.yaml
 You can edit it and run command below to create it.
 ```sh
 kubectl apply -f artifacts/examples/getchangedblocks.yaml
