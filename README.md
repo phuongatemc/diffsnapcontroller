@@ -2,6 +2,10 @@
 
 This is a prototype that implements the controller for GetChangedBlocks API
 
+# Prerequisite:
+- AWS EKS: See instruction in deploy/eks.md and sample in deploy/k8s
+- AWS CSI Driver: See instruction in deploy/README.md
+
 # Build:
 
 ```sh
