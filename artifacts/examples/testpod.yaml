@@ -4,8 +4,6 @@ metadata:
   name: phtest
   namespace: testns
 spec:
-#  serviceAccount: testns-serviceaccount
-#  serviceAccountName: testns-serviceaccount
   containers:
     - name: ph-testpod
       args:
