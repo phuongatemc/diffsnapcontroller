@@ -5,6 +5,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
+    api-approved.kubernetes.io: https://github.com/kubernetes/kubernetes/pull/78458
+    apis.kcp.dev/bound-crd: t
   creationTimestamp: null
   name: getchangedblockses.differentialsnapshot.example.com
 spec:
@@ -109,6 +111,9 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+        # status enables the status subresource.
+        status: {}
 status:
   acceptedNames:
     kind: ""
