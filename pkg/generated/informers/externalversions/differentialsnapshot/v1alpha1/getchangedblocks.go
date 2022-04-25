@@ -22,14 +22,14 @@ import (
 	"context"
 	time "time"
 
+	differentialsnapshotv1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+	versioned "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
+	internalinterfaces "example.com/differentialsnapshot/pkg/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "example.com/differentialsnapshot/pkg/generated/listers/differentialsnapshot/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
-	differentialsnapshotv1alpha1 "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	versioned "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned"
-	internalinterfaces "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "k8s.io/differentialsnapshot/pkg/generated/listers/differentialsnapshot/v1alpha1"
 )
 
 // GetChangedBlocksInformer provides access to a shared informer and lister for

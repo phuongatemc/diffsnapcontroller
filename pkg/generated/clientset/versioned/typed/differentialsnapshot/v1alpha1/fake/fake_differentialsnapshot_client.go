@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
+	v1alpha1 "example.com/differentialsnapshot/pkg/generated/clientset/versioned/typed/differentialsnapshot/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
-	v1alpha1 "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned/typed/differentialsnapshot/v1alpha1"
 )
 
 type FakeDifferentialsnapshotV1alpha1 struct {

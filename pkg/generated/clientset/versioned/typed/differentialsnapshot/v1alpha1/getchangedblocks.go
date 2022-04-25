@@ -22,12 +22,12 @@ import (
 	"context"
 	"time"
 
+	v1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+	scheme "example.com/differentialsnapshot/pkg/generated/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
-	v1alpha1 "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	scheme "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned/scheme"
 )
 
 // GetChangedBlocksesGetter has a method to return a GetChangedBlocksInterface.

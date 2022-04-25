@@ -1,10 +1,11 @@
 // This is a generated file. Do not edit directly.
 
-module k8s.io/differentialsnapshot
+module example.com/differentialsnapshot
 
 go 1.16
 
 require (
+	github.com/aws/aws-sdk-go v1.43.45 // indirect
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.18.2
 	k8s.io/client-go v0.18.2

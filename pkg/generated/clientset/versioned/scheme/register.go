@@ -19,12 +19,12 @@ limitations under the License.
 package scheme
 
 import (
+	differentialsnapshotv1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	differentialsnapshotv1alpha1 "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
 )
 
 var Scheme = runtime.NewScheme()

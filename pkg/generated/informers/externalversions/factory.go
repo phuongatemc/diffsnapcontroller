@@ -23,13 +23,13 @@ import (
 	sync "sync"
 	time "time"
 
+	versioned "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
+	differentialsnapshot "example.com/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot"
+	internalinterfaces "example.com/differentialsnapshot/pkg/generated/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
-	versioned "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned"
-	differentialsnapshot "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot"
-	internalinterfaces "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions/internalinterfaces"
 )
 
 // SharedInformerOption defines the functional option type for SharedInformerFactory.

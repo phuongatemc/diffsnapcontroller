@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -33,9 +32,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 
-	differentialsnapshot "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	"k8s.io/differentialsnapshot/pkg/generated/clientset/versioned/fake"
-	informers "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions"
+	differentialsnapshot "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+	"example.com/differentialsnapshot/pkg/generated/clientset/versioned/fake"
+	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions"
 )
 
 var (
@@ -50,7 +49,6 @@ type fixture struct {
 	kubeclient *k8sfake.Clientset
 	// Objects to put in the store.
 	differentialSnapshotLister        []*differentialsnapshot.DifferentialSnapshot
-	deploymentLister []*apps.Deployment
 	// Actions expected to happen on the client.
 	kubeactions []core.Action
 	actions     []core.Action
@@ -75,8 +73,7 @@ func newDifferentialSnapshot(name string, replicas *int32) *differentialsnapshot
 			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: differentialsnapshot.DifferentialSnapshotSpec{
-			DeploymentName: fmt.Sprintf("%s-deployment", name),
-			Replicas:       replicas,
+			
 		},
 	}
 }
@@ -88,21 +85,15 @@ func (f *fixture) newController() (*Controller, informers.SharedInformerFactory,
 	i := informers.NewSharedInformerFactory(f.client, noResyncPeriodFunc())
 	k8sI := kubeinformers.NewSharedInformerFactory(f.kubeclient, noResyncPeriodFunc())
 
-	c := NewController(f.kubeclient, f.client,
-		k8sI.Apps().V1().Deployments(), i.Differentialsnapshot().V1alpha1().GetChangedBlockses())
+	c := NewController(f.kubeclient, f.client, i.Differentialsnapshot().V1alpha1().GetChangedBlockses())
 
 	c.differentialSnapshotsSynced = alwaysReady
-	c.deploymentsSynced = alwaysReady
 	c.recorder = &record.FakeRecorder{}
 
 	for _, f := range f.differentialSnapshotLister {
 		i.Differentialsnapshot().V1alpha1().GetChangedBlockses().Informer().GetIndexer().Add(f)
 	}
-
-	for _, d := range f.deploymentLister {
-		k8sI.Apps().V1().Deployments().Informer().GetIndexer().Add(d)
-	}
-
+	
 	return c, i, k8sI
 }
 
@@ -216,23 +207,13 @@ func filterInformerActions(actions []core.Action) []core.Action {
 	for _, action := range actions {
 		if len(action.GetNamespace()) == 0 &&
 			(action.Matches("list", "differentialSnapshots") ||
-				action.Matches("watch", "differentialSnapshots") ||
-				action.Matches("list", "deployments") ||
-				action.Matches("watch", "deployments")) {
+				action.Matches("watch", "differentialSnapshots")) {
 			continue
 		}
 		ret = append(ret, action)
 	}
 
 	return ret
-}
-
-func (f *fixture) expectCreateDeploymentAction(d *apps.Deployment) {
-	f.kubeactions = append(f.kubeactions, core.NewCreateAction(schema.GroupVersionResource{Resource: "deployments"}, d.Namespace, d))
-}
-
-func (f *fixture) expectUpdateDeploymentAction(d *apps.Deployment) {
-	f.kubeactions = append(f.kubeactions, core.NewUpdateAction(schema.GroupVersionResource{Resource: "deployments"}, d.Namespace, d))
 }
 
 func (f *fixture) expectUpdateDifferentialSnapshotStatusAction(differentialSnapshot *differentialsnapshot.GetChangedBlocks) {
@@ -249,66 +230,16 @@ func getKey(differentialSnapshot *differentialsnapshot.GetChangedBlocks, t *test
 	return key
 }
 
-func TestCreatesDeployment(t *testing.T) {
-	f := newFixture(t)
-	differentialSnapshot := newDifferentialSnapshot("test", int32Ptr(1))
-
-	f.differentialSnapshotLister = append(f.differentialSnapshotLister, differentialSnapshot)
-	f.objects = append(f.objects, differentialSnapshot)
-
-	expDeployment := newDeployment(differentialSnapshot)
-	f.expectCreateDeploymentAction(expDeployment)
-	f.expectUpdateDifferentialSnapshotStatusAction(differentialSnapshot)
-
-	f.run(getKey(differentialSnapshot, t))
-}
-
 func TestDoNothing(t *testing.T) {
 	f := newFixture(t)
 	differentialSnapshot := newDifferentialSnapshot("test", int32Ptr(1))
-	d := newDeployment(differentialSnapshot)
 
 	f.differentialSnapshotLister = append(f.differentialSnapshotLister, differentialSnapshot)
 	f.objects = append(f.objects, differentialSnapshot)
-	f.deploymentLister = append(f.deploymentLister, d)
 	f.kubeobjects = append(f.kubeobjects, d)
 
 	f.expectUpdateDifferentialSnapshotStatusAction(differentialSnapshot)
 	f.run(getKey(differentialSnapshot, t))
-}
-
-func TestUpdateDeployment(t *testing.T) {
-	f := newFixture(t)
-	differentialSnapshot := newDifferentialSnapshot("test", int32Ptr(1))
-	d := newDeployment(differentialSnapshot)
-
-	// Update replicas
-	differentialSnapshot.Spec.Replicas = int32Ptr(2)
-	expDeployment := newDeployment(differentialSnapshot)
-
-	f.differentialSnapshotLister = append(f.differentialSnapshotLister, differentialSnapshot)
-	f.objects = append(f.objects, differentialSnapshot)
-	f.deploymentLister = append(f.deploymentLister, d)
-	f.kubeobjects = append(f.kubeobjects, d)
-
-	f.expectUpdateDifferentialSnapshotStatusAction(differentialSnapshot)
-	f.expectUpdateDeploymentAction(expDeployment)
-	f.run(getKey(differentialSnapshot, t))
-}
-
-func TestNotControlledByUs(t *testing.T) {
-	f := newFixture(t)
-	differentialSnapshot := newDifferentialSnapshot("test", int32Ptr(1))
-	d := newDeployment(differentialSnapshot)
-
-	d.ObjectMeta.OwnerReferences = []metav1.OwnerReference{}
-
-	f.differentialSnapshotLister = append(f.differentialSnapshotLister, differentialSnapshot)
-	f.objects = append(f.objects, differentialSnapshot)
-	f.deploymentLister = append(f.deploymentLister, d)
-	f.kubeobjects = append(f.kubeobjects, d)
-
-	f.runExpectError(getKey(differentialSnapshot, t))
 }
 
 func int32Ptr(i int32) *int32 { return &i }

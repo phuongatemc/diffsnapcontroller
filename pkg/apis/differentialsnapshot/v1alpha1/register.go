@@ -20,7 +20,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot"
+
+	"example.com/differentialsnapshot/pkg/apis/differentialsnapshot"
 )
 
 // SchemeGroupVersion is group version used to register these objects

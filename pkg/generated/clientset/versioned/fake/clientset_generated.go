@@ -19,14 +19,14 @@ limitations under the License.
 package fake
 
 import (
+	clientset "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
+	differentialsnapshotv1alpha1 "example.com/differentialsnapshot/pkg/generated/clientset/versioned/typed/differentialsnapshot/v1alpha1"
+	fakedifferentialsnapshotv1alpha1 "example.com/differentialsnapshot/pkg/generated/clientset/versioned/typed/differentialsnapshot/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
 	fakediscovery "k8s.io/client-go/discovery/fake"
 	"k8s.io/client-go/testing"
-	clientset "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned"
-	differentialsnapshotv1alpha1 "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned/typed/differentialsnapshot/v1alpha1"
-	fakedifferentialsnapshotv1alpha1 "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned/typed/differentialsnapshot/v1alpha1/fake"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.

@@ -26,10 +26,12 @@ import (
 // GetChangedBlocks is a specification for a GetChangedBlocks resource
 type GetChangedBlocks struct {
 	metav1.TypeMeta   `json:",inline"`
+	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   GetChangedBlocksSpec   `json:"spec"`
-	Status GetChangedBlocksStatus `json:"status"`
+	// +optional
+	Status GetChangedBlocksStatus `json:"status,omitempty"`
 }
 
 // GetChangedBlocksSpec is the spec for a GetChangedBlocks resource

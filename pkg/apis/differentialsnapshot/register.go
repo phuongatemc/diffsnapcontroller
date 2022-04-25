@@ -18,5 +18,5 @@ package differentialsnapshot
 
 // GroupName is the group name used in this package
 const (
-	GroupName = "differentialsnapshot.k8s.io"
+	GroupName = "differentialsnapshot.example.com"
 )

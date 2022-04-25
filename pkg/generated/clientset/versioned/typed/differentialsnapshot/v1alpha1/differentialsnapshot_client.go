@@ -21,9 +21,9 @@ package v1alpha1
 import (
 	"net/http"
 
+	v1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+	"example.com/differentialsnapshot/pkg/generated/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
-	v1alpha1 "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	"k8s.io/differentialsnapshot/pkg/generated/clientset/versioned/scheme"
 )
 
 type DifferentialsnapshotV1alpha1Interface interface {
@@ -31,7 +31,7 @@ type DifferentialsnapshotV1alpha1Interface interface {
 	GetChangedBlocksesGetter
 }
 
-// DifferentialsnapshotV1alpha1Client is used to interact with features provided by the differentialsnapshot.k8s.io group.
+// DifferentialsnapshotV1alpha1Client is used to interact with features provided by the differentialsnapshot.example.com group.
 type DifferentialsnapshotV1alpha1Client struct {
 	restClient rest.Interface
 }

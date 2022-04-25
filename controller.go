@@ -21,27 +21,25 @@ import (
 	"fmt"
 	"time"
 
-	appsv1 "k8s.io/api/apps/v1"
+	"github.com/aws/aws-sdk-go/service/ebs"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	appsinformers "k8s.io/client-go/informers/apps/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	appslisters "k8s.io/client-go/listers/apps/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	differentialsnapshotv1alpha1 "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	clientset "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned"
-	samplescheme "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned/scheme"
-	informers "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
-	listers "k8s.io/differentialsnapshot/pkg/generated/listers/differentialsnapshot/v1alpha1"
+	differentialsnapshotv1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+	clientset "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
+	diffsnapscheme "example.com/differentialsnapshot/pkg/generated/clientset/versioned/scheme"
+	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
+	listers "example.com/differentialsnapshot/pkg/generated/listers/differentialsnapshot/v1alpha1"
 )
 
 const controllerAgentName = "differentialsnapshot"
@@ -49,13 +47,6 @@ const controllerAgentName = "differentialsnapshot"
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a GetChangedBlocks is synced
 	SuccessSynced = "Synced"
-	// ErrResourceExists is used as part of the Event 'reason' when a GetChangedBlocks fails
-	// to sync due to a Deployment of the same name already existing.
-	ErrResourceExists = "ErrResourceExists"
-
-	// MessageResourceExists is the message used for Events when a resource
-	// fails to sync due to a Deployment already existing
-	MessageResourceExists = "Resource %q already exists and is not managed by GetChangedBlocks"
 	// MessageResourceSynced is the message used for an Event fired when a GetChangedBlocks
 	// is synced successfully
 	MessageResourceSynced = "GetChangedBlocks synced successfully"
@@ -65,11 +56,9 @@ const (
 type Controller struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
-	// sampleclientset is a clientset for our own API group
-	sampleclientset clientset.Interface
-
-	deploymentsLister        appslisters.DeploymentLister
-	deploymentsSynced        cache.InformerSynced
+	// diffsnapclientset is a clientset for our own API group
+	diffsnapclientset        clientset.Interface
+	EBS                      *ebs.EBS
 	getChangedBlocksesLister listers.GetChangedBlocksLister
 	getChangedBlocksesSynced cache.InformerSynced
 
@@ -84,17 +73,16 @@ type Controller struct {
 	recorder record.EventRecorder
 }
 
-// NewController returns a new sample controller
+// NewController returns a new diffsnap controller
 func NewController(
 	kubeclientset kubernetes.Interface,
-	sampleclientset clientset.Interface,
-	deploymentInformer appsinformers.DeploymentInformer,
+	diffsnapclientset clientset.Interface,
 	getChangedBlocksInformer informers.GetChangedBlocksInformer) *Controller {
 
 	// Create event broadcaster
 	// Add differentialsnapshot types to the default Kubernetes Scheme so Events can be
 	// logged for differentialsnapshot types.
-	utilruntime.Must(samplescheme.AddToScheme(scheme.Scheme))
+	utilruntime.Must(diffsnapscheme.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartStructuredLogging(0)
@@ -103,13 +91,18 @@ func NewController(
 
 	controller := &Controller{
 		kubeclientset:            kubeclientset,
-		sampleclientset:          sampleclientset,
-		deploymentsLister:        deploymentInformer.Lister(),
-		deploymentsSynced:        deploymentInformer.Informer().HasSynced,
+		diffsnapclientset:        diffsnapclientset,
 		getChangedBlocksesLister: getChangedBlocksInformer.Lister(),
 		getChangedBlocksesSynced: getChangedBlocksInformer.Informer().HasSynced,
 		workqueue:                workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "GetChangedBlockses"),
 		recorder:                 recorder,
+	}
+
+	var err error
+	controller.EBS, err = newEBS()
+	if err != nil {
+		klog.Info("Unable to create EBS Client: %s.", err)
+		return nil
 	}
 
 	klog.Info("Setting up event handlers")
@@ -119,26 +112,6 @@ func NewController(
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueGetChangedBlocks(new)
 		},
-	})
-	// Set up an event handler for when Deployment resources change. This
-	// handler will lookup the owner of the given Deployment, and if it is
-	// owned by a GetChangedBlocks resource then the handler will enqueue that GetChangedBlocks resource for
-	// processing. This way, we don't need to implement custom logic for
-	// handling Deployment resources. More info on this pattern:
-	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
-	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.handleObject,
-		UpdateFunc: func(old, new interface{}) {
-			newDepl := new.(*appsv1.Deployment)
-			oldDepl := old.(*appsv1.Deployment)
-			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
-				// Periodic resync will send update events for all known Deployments.
-				// Two different versions of the same Deployment will always have different RVs.
-				return
-			}
-			controller.handleObject(new)
-		},
-		DeleteFunc: controller.handleObject,
 	})
 
 	return controller
@@ -157,7 +130,7 @@ func (c *Controller) Run(workers int, stopCh <-chan struct{}) error {
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.deploymentsSynced, c.getChangedBlocksesSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.getChangedBlocksesSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -260,24 +233,43 @@ func (c *Controller) syncHandler(key string) error {
 
 		return err
 	}
-	// TODO: add processing GetChangedBlocks here
-	klog.Infof("Processing GetChangedBlocks %s", getChangedBlocks.Name)
-	getChangedBlocks.Status.State = "Success"
-	err = c.updateGetChangedBlocksStatus(getChangedBlocks)
-	if err != nil {
-		return err
+	if getChangedBlocks.Status.State != "" {
+		klog.Info(getChangedBlocks.Name, "has already been processed. Ignoring ...")
+		return nil
+	}
+	klog.Info("Receive GetChangedBlocks: ", printObject(getChangedBlocks))
+	getChangedBlocks.Status = differentialsnapshotv1alpha1.GetChangedBlocksStatus{State: "Running"}
+	updatedGetChangedBlocks, err2 := c.updateGetChangedBlocksStatus(getChangedBlocks)
+	if err2 != nil {
+		err = fmt.Errorf("Unable to update GetChangedBlocksStatus: %s", err2)
+		klog.Info(err)
+	} else {
+		getChangedBlocks = updatedGetChangedBlocks
+		klog.Info("After updated GetChangedBlocks: ", printObject(getChangedBlocks))
+	}
+	klog.Info("Start processing GetChangedBlocks")
+	err = processGetChangedBlock(c.EBS, getChangedBlocks)
+	updatedGetChangedBlocks, err2 = c.updateGetChangedBlocksStatus(getChangedBlocks)
+	if err2 != nil {
+		err = fmt.Errorf("Unable to update GetChangedBlocksStatus: %s", err2)
+		klog.Info(err)
+	} else {
+		getChangedBlocks = updatedGetChangedBlocks
+		klog.Info("After updated GetChangedBlocks: ", printObject(getChangedBlocks))
 	}
 
 	c.recorder.Event(getChangedBlocks, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
-	return nil
+
+	return err
 }
 
 func (c *Controller) updateGetChangedBlocksStatus(
-	getChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks) error {
+	getChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks) (
+	updatedGetChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks,	err error) {
 	getChangedBlocksCopy := getChangedBlocks.DeepCopy()
-	_, err := c.sampleclientset.DifferentialsnapshotV1alpha1().GetChangedBlockses(
+	updatedGetChangedBlocks, err = c.diffsnapclientset.DifferentialsnapshotV1alpha1().GetChangedBlockses(
 		getChangedBlocks.Namespace).UpdateStatus(context.TODO(), getChangedBlocksCopy, metav1.UpdateOptions{})
-	return err
+	return
 }
 
 // enqueueGetChangedBlocks takes a GetChangedBlocks resource and converts it into a namespace/name

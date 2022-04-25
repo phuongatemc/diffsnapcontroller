@@ -21,13 +21,13 @@ package fake
 import (
 	"context"
 
+	v1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
-	v1alpha1 "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
 )
 
 // FakeGetChangedBlockses implements GetChangedBlocksInterface
@@ -36,9 +36,9 @@ type FakeGetChangedBlockses struct {
 	ns   string
 }
 
-var getchangedblocksesResource = schema.GroupVersionResource{Group: "differentialsnapshot.k8s.io", Version: "v1alpha1", Resource: "getchangedblockses"}
+var getchangedblocksesResource = schema.GroupVersionResource{Group: "differentialsnapshot.example.com", Version: "v1alpha1", Resource: "getchangedblockses"}
 
-var getchangedblocksesKind = schema.GroupVersionKind{Group: "differentialsnapshot.k8s.io", Version: "v1alpha1", Kind: "GetChangedBlocks"}
+var getchangedblocksesKind = schema.GroupVersionKind{Group: "differentialsnapshot.example.com", Version: "v1alpha1", Kind: "GetChangedBlocks"}
 
 // Get takes name of the getChangedBlocks, and returns the corresponding getChangedBlocks object, and an error if there is any.
 func (c *FakeGetChangedBlockses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.GetChangedBlocks, err error) {

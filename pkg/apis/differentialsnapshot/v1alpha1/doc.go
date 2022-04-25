@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // +k8s:deepcopy-gen=package
-// +groupName=differentialsnapshot.k8s.io
+// +groupName=differentialsnapshot.example.com
 
 // Package v1alpha1 is the v1alpha1 version of the API.
-package v1alpha1 // import "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+package v1alpha1 // import "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"

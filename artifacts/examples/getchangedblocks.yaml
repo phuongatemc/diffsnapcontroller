@@ -1,0 +1,9 @@
+apiVersion: differentialsnapshot.example.com/v1alpha1
+kind: GetChangedBlocks
+metadata:
+  name: test1
+  namespace: testns
+spec:
+  snapshotBase: "snap-064202d2d5a479b45"
+  snapshotTarget: "snap-016aec3775e974799"
+  maxEntries: 100000

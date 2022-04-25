@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
-	v1alpha1 "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
 )
 
 // GetChangedBlocksLister helps list GetChangedBlockses.

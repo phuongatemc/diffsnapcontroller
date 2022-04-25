@@ -27,14 +27,19 @@ import (
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	clientset "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned"
-	informers "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions"
-	"k8s.io/differentialsnapshot/pkg/signals"
+	clientset "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
+	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions"
+	informer "example.com/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
+	"example.com/differentialsnapshot/pkg/signals"
 )
 
 var (
 	masterURL  string
 	kubeconfig string
+)
+
+const (
+	CONTROLLER_NAMESPACE = "testns"
 )
 
 func main() {
@@ -54,22 +59,27 @@ func main() {
 		klog.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
 
-	exampleClient, err := clientset.NewForConfig(cfg)
+	diffsnapClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
-		klog.Fatalf("Error building example clientset: %s", err.Error())
+		klog.Fatalf("Error building diffsnap clientset: %s", err.Error())
 	}
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	exampleInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
+	diffsnapInformerFactory := informers.NewSharedInformerFactory(diffsnapClient, time.Second*30)
 
-	controller := NewController(kubeClient, exampleClient,
-		kubeInformerFactory.Apps().V1().Deployments(),
-		exampleInformerFactory.Differentialsnapshot().V1alpha1().GetChangedBlockses())
+	getChangedBlocksesInformer := informer.New(diffsnapInformerFactory, CONTROLLER_NAMESPACE, nil).GetChangedBlockses()
+	controller := NewController(kubeClient, diffsnapClient, getChangedBlocksesInformer)
+		//diffsnapInformerFactory.Differentialsnapshot().V1alpha1().GetChangedBlockses())
+
+	if controller == nil {
+		klog.Fatalf("Error initialize controller.")
+		return
+	}
 
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
 	// Start method is non-blocking and runs all registered informers in a dedicated goroutine.
 	kubeInformerFactory.Start(stopCh)
-	exampleInformerFactory.Start(stopCh)
+	diffsnapInformerFactory.Start(stopCh)
 
 	if err = controller.Run(2, stopCh); err != nil {
 		klog.Fatalf("Error running controller: %s", err.Error())
