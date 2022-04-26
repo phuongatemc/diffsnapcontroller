@@ -18,24 +18,30 @@ package main
 
 import (
 	"flag"
+	"os"
 	"time"
 
+	"github.com/kubernetes-csi/csi-lib-utils/connection"
+	"github.com/kubernetes-csi/csi-lib-utils/metrics"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	clientset "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
-	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions"
-	informer "example.com/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
-	"example.com/differentialsnapshot/pkg/signals"
+	changeblockservice "k8s.io/differentialsnapshot/pkg/changedblockservice/changed_block_service"
+	"k8s.io/differentialsnapshot/pkg/controller"
+	clientset "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned"
+	informers "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions"
+	"k8s.io/differentialsnapshot/pkg/signals"
 )
 
 var (
 	masterURL  string
 	kubeconfig string
+	csiAddress string
 )
 
 const (
@@ -67,14 +73,25 @@ func main() {
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	diffsnapInformerFactory := informers.NewSharedInformerFactory(diffsnapClient, time.Second*30)
 
-	getChangedBlocksesInformer := informer.New(diffsnapInformerFactory, CONTROLLER_NAMESPACE, nil).GetChangedBlockses()
-	controller := NewController(kubeClient, diffsnapClient, getChangedBlocksesInformer)
-		//diffsnapInformerFactory.Differentialsnapshot().V1alpha1().GetChangedBlockses())
+	metricsManager := metrics.NewCSIMetricsManagerForSidecar("cbt-service")
 
-	if controller == nil {
-		klog.Fatalf("Error initialize controller.")
-		return
+	klog.Infof("csi address: %v", csiAddress)
+
+	//create client
+	csiConn, err := connection.Connect(
+		csiAddress,
+		metricsManager,
+		connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
+	if err != nil {
+		klog.Errorf("error connecting to CSI driver: %v", err)
+		os.Exit(1)
 	}
+
+	cbtClient := changeblockservice.NewDifferentialSnapshotClient(csiConn)
+
+	controller := controller.NewController(kubeClient, exampleClient,
+		exampleInformerFactory.Differentialsnapshot().V1alpha1().GetChangedBlockses(),
+		cbtClient)
 
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
 	// Start method is non-blocking and runs all registered informers in a dedicated goroutine.
@@ -89,4 +106,6 @@ func main() {
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&csiAddress, "csi-address", "/run/csi/socket", "Address of the CSI driver socket.")
+
 }

@@ -1,0 +1,41 @@
+syntax = "proto3";
+package cbt.csi.v1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "changedblockservice/changed_block_service";
+
+
+service DifferentialSnapshot {
+    rpc GetChangedBlocks(GetChangedBlocksRequest) returns (GetChangedBlocksResponse) {}
+}
+
+message GetChangedBlocksRequest {
+    string snapshotBase = 1;
+    string snapshotTarget = 2;
+
+    string volumeID = 3;
+
+    string startOfOffset = 4;
+
+    uint64 MaxEntries = 5;
+
+    // Plugin specific parameters passed in as opaque key-value pairs.
+    // This field is OPTIONAL. The Plugin is responsible for parsing and
+    // validating these parameters. COs will treat these as opaque.
+    map<string, string> parameters = 6;
+}
+
+message GetChangedBlocksResponse {
+    string nextOffSet = 1;
+    uint64 volumeSize = 2;
+    uint64 timeout = 3;
+    repeated ChangedBlock changedBlocks= 4; //array of ChangedBlock
+}
+
+message ChangedBlock {
+    uint64 offset = 1;
+    uint64 size = 2;
+    bool zeroOut = 3;
+    bytes context = 4; 
+}

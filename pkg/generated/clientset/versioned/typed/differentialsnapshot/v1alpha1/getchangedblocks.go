@@ -69,7 +69,7 @@ func (c *getChangedBlockses) Get(ctx context.Context, name string, options v1.Ge
 	result = &v1alpha1.GetChangedBlocks{}
 	err = c.client.Get().
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
 		Do(ctx).
@@ -86,7 +86,7 @@ func (c *getChangedBlockses) List(ctx context.Context, opts v1.ListOptions) (res
 	result = &v1alpha1.GetChangedBlocksList{}
 	err = c.client.Get().
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
 		Do(ctx).
@@ -103,7 +103,7 @@ func (c *getChangedBlockses) Watch(ctx context.Context, opts v1.ListOptions) (wa
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
 		Watch(ctx)
@@ -114,7 +114,7 @@ func (c *getChangedBlockses) Create(ctx context.Context, getChangedBlocks *v1alp
 	result = &v1alpha1.GetChangedBlocks{}
 	err = c.client.Post().
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(getChangedBlocks).
 		Do(ctx).
@@ -127,7 +127,7 @@ func (c *getChangedBlockses) Update(ctx context.Context, getChangedBlocks *v1alp
 	result = &v1alpha1.GetChangedBlocks{}
 	err = c.client.Put().
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		Name(getChangedBlocks.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(getChangedBlocks).
@@ -142,7 +142,7 @@ func (c *getChangedBlockses) UpdateStatus(ctx context.Context, getChangedBlocks 
 	result = &v1alpha1.GetChangedBlocks{}
 	err = c.client.Put().
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		Name(getChangedBlocks.Name).
 		SubResource("status").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -156,7 +156,7 @@ func (c *getChangedBlockses) UpdateStatus(ctx context.Context, getChangedBlocks 
 func (c *getChangedBlockses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		Name(name).
 		Body(&opts).
 		Do(ctx).
@@ -171,7 +171,7 @@ func (c *getChangedBlockses) DeleteCollection(ctx context.Context, opts v1.Delet
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
 		Body(&opts).
@@ -184,7 +184,7 @@ func (c *getChangedBlockses) Patch(ctx context.Context, name string, pt types.Pa
 	result = &v1alpha1.GetChangedBlocks{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
-		Resource("getchangedblockses").
+		Resource("getchangedblocks").
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
