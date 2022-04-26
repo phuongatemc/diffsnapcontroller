@@ -34,11 +34,11 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	differentialsnapshotv1alpha1 "k8s.io/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	changeblockservice "k8s.io/differentialsnapshot/pkg/changedblockservice/changed_block_service"
-	clientset "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned"
-	informers "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
-	listers "k8s.io/differentialsnapshot/pkg/generated/listers/differentialsnapshot/v1alpha1"
+	differentialsnapshotv1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+	changeblockservice "example.com/differentialsnapshot/pkg/changedblockservice/changed_block_service"
+	clientset "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
+	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
+	listers "example.com/differentialsnapshot/pkg/generated/listers/differentialsnapshot/v1alpha1"
 )
 
 const controllerAgentName = "differentialsnapshot"
@@ -56,7 +56,7 @@ type Controller struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
 	// sampleclientset is a clientset for our own API group
-	sampleclientset clientset.Interface
+	diffSnapClient clientset.Interface
 
 	getChangedBlocksesLister listers.GetChangedBlocksLister
 	getChangedBlocksesSynced cache.InformerSynced
@@ -77,14 +77,14 @@ type Controller struct {
 // NewController returns a new diffsnap controller
 func NewController(
 	kubeclientset kubernetes.Interface,
-	sampleclientset clientset.Interface,
+	diffSnapClient clientset.Interface,
 	getChangedBlocksInformer informers.GetChangedBlocksInformer,
 	cbtService changeblockservice.DifferentialSnapshotClient) *Controller {
 
 	// Create event broadcaster
 	// Add differentialsnapshot types to the default Kubernetes Scheme so Events can be
 	// logged for differentialsnapshot types.
-	utilruntime.Must(diffsnapscheme.AddToScheme(scheme.Scheme))
+	utilruntime.Must(differentialsnapshotv1alpha1.AddToScheme(scheme.Scheme))
 	klog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartStructuredLogging(0)
@@ -93,19 +93,12 @@ func NewController(
 
 	controller := &Controller{
 		kubeclientset:              kubeclientset,
-		sampleclientset:            sampleclientset,
+		diffSnapClient:             diffSnapClient,
 		getChangedBlocksesLister:   getChangedBlocksInformer.Lister(),
 		getChangedBlocksesSynced:   getChangedBlocksInformer.Informer().HasSynced,
 		workqueue:                  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "GetChangedBlockses"),
 		recorder:                   recorder,
 		differentialSnapshotClient: cbtService,
-	}
-
-	var err error
-	controller.EBS, err = newEBS()
-	if err != nil {
-		klog.Info("Unable to create EBS Client: %s.", err)
-		return nil
 	}
 
 	klog.Info("Setting up event handlers")
@@ -263,7 +256,7 @@ func (c *Controller) syncHandler(key string) error {
 	getChangedBlocks.Status.State = "Success"
 	getChangedBlocks.Status.ChangeBlockList = v1alpha1ChangeBlocks
 	klog.Infof("Processed GetChangedBlocks name: %v, output: %v", getChangedBlocks.Name, getChangedBlocks)
-	err = c.updateGetChangedBlocksStatus(getChangedBlocks)
+	getChangedBlocks, err = c.updateGetChangedBlocksStatus(getChangedBlocks)
 	if err != nil {
 		klog.Errorf("unable to update the CBT status: %v", err)
 		return err
@@ -278,7 +271,7 @@ func (c *Controller) updateGetChangedBlocksStatus(
 	getChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks) (
 	updatedGetChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks, err error) {
 	getChangedBlocksCopy := getChangedBlocks.DeepCopy()
-	updatedGetChangedBlocks, err = c.diffsnapclientset.DifferentialsnapshotV1alpha1().GetChangedBlockses(
+	updatedGetChangedBlocks, err = c.diffSnapClient.DifferentialsnapshotV1alpha1().GetChangedBlockses(
 		getChangedBlocks.Namespace).UpdateStatus(context.TODO(), getChangedBlocksCopy, metav1.UpdateOptions{})
 	return
 }
