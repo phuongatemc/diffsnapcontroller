@@ -31,11 +31,11 @@ import (
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	changeblockservice "k8s.io/differentialsnapshot/pkg/changedblockservice/changed_block_service"
-	"k8s.io/differentialsnapshot/pkg/controller"
-	clientset "k8s.io/differentialsnapshot/pkg/generated/clientset/versioned"
-	informers "k8s.io/differentialsnapshot/pkg/generated/informers/externalversions"
-	"k8s.io/differentialsnapshot/pkg/signals"
+	changeblockservice "example.com/differentialsnapshot/pkg/changedblockservice/changed_block_service"
+	"example.com/differentialsnapshot/pkg/controller"
+	clientset "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
+	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions"
+	"example.com/differentialsnapshot/pkg/signals"
 )
 
 var (
@@ -89,8 +89,8 @@ func main() {
 
 	cbtClient := changeblockservice.NewDifferentialSnapshotClient(csiConn)
 
-	controller := controller.NewController(kubeClient, exampleClient,
-		exampleInformerFactory.Differentialsnapshot().V1alpha1().GetChangedBlockses(),
+	controller := controller.NewController(kubeClient, diffsnapClient,
+		diffsnapInformerFactory.Differentialsnapshot().V1alpha1().GetChangedBlockses(),
 		cbtClient)
 
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
