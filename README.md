@@ -38,7 +38,7 @@ kubectl apply -f artifacts/examples/differentialsnapshot.example.com_getchangedb
 
 kubectl apply -f deploy/controller/ns.yaml
 
-kubectl apply -f deploy/controller/rbac.yaml
+kubectl auth reconcile -f deploy/controller/rbac.yaml
 
 kubectl apply -f deploy/controller/deploy.yaml
 ```
@@ -52,3 +52,11 @@ An example of the GetChangedBlock custom resource can be found in
 
 Instructions on how to set up an EKS cluster with the CSI snapshot controller
 and EBS CSI driver can be found in the `deploy/eks/README.md` file.
+
+## Code Generation
+
+To re-generate the CRD clientsets and informers code:
+
+```sh
+make codegen
+```
