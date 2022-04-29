@@ -11,3 +11,8 @@ build:
 
 push:
 	docker push $(IMAGE_NAME):$(IMAGE_TAG)
+
+codegen:
+	go mod vendor
+
+	./hack/update-codegen.sh

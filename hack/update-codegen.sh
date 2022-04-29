@@ -28,8 +28,12 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./vendor/k8s.io/code-
 bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
   example.com/differentialsnapshot/pkg/generated example.com/differentialsnapshot/pkg/apis \
   differentialsnapshot:v1alpha1 \
-  --output-base "$(dirname "${BASH_SOURCE[0]}")/../../.." \
+  --output-base "$(dirname "${BASH_SOURCE[0]}")/../" \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
+
+cp -R example.com/differentialsnapshot/pkg/generated/* pkg/generated/
+cp -R example.com/differentialsnapshot/pkg/apis/* pkg/apis/
+rm -rf example.com
 
 # To use your own boilerplate text append:
 #   --go-header-file "${SCRIPT_ROOT}"/hack/custom-boilerplate.go.txt
