@@ -1,3 +1,4 @@
 diffsnap-controller
 **/*.swp
 vendor
+diffsnap-aggapi
