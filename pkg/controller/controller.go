@@ -241,6 +241,14 @@ func (c *Controller) syncHandler(key string) error {
 	})
 	if err != nil {
 		klog.Errorf("Unable to get changed blocks from service: %v", err)
+		getChangedBlocks.Status.State = "Failed"
+		getChangedBlocks.Status.Error = err.Error()
+		getChangedBlocks.Status.ChangeBlockList = []differentialsnapshotv1alpha1.ChangedBlock{}
+		getChangedBlocks, err = c.updateGetChangedBlocksStatus(getChangedBlocks)
+		if err != nil {
+			klog.Errorf("unable to update the CBT status: %v", err)
+			return err
+		}
 		return err
 	}
 	klog.Infof("Processed GetChangedBlocks %#v", cbs)
