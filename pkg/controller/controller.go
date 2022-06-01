@@ -34,11 +34,11 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	differentialsnapshotv1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	changeblockservice "example.com/differentialsnapshot/pkg/changedblockservice/changed_block_service"
-	clientset "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
-	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
-	listers "example.com/differentialsnapshot/pkg/generated/listers/differentialsnapshot/v1alpha1"
+	differentialsnapshotv1alpha1 "github.com/phuongatemc/diffsnapcontroller/pkg/apis/differentialsnapshot/v1alpha1"
+	changeblockservice "github.com/phuongatemc/diffsnapcontroller/pkg/changedblockservice/changed_block_service"
+	clientset "github.com/phuongatemc/diffsnapcontroller/pkg/generated/clientset/versioned"
+	informers "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
+	listers "github.com/phuongatemc/diffsnapcontroller/pkg/generated/listers/differentialsnapshot/v1alpha1"
 )
 
 const controllerAgentName = "differentialsnapshot"

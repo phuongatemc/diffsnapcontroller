@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ebs"
 	"k8s.io/klog/v2"
 
-	differentialsnapshotv1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+	differentialsnapshotv1alpha1 "github.com/phuongatemc/diffsnapcontroller/pkg/apis/differentialsnapshot/v1alpha1"
 )
 
 func processGetChangedBlock(cEBS *ebs.EBS, getChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks) (err error) {

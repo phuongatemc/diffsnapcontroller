@@ -1,6 +1,6 @@
 // This is a generated file. Do not edit directly.
 
-module example.com/differentialsnapshot
+module github.com/phuongatemc/diffsnapcontroller
 
 go 1.16
 

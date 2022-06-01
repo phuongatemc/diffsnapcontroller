@@ -31,11 +31,11 @@ import (
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	changeblockservice "example.com/differentialsnapshot/pkg/changedblockservice/changed_block_service"
-	"example.com/differentialsnapshot/pkg/controller"
-	clientset "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
-	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions"
-	"example.com/differentialsnapshot/pkg/signals"
+	changeblockservice "github.com/phuongatemc/diffsnapcontroller/pkg/changedblockservice/changed_block_service"
+	"github.com/phuongatemc/diffsnapcontroller/pkg/controller"
+	clientset "github.com/phuongatemc/diffsnapcontroller/pkg/generated/clientset/versioned"
+	informers "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions"
+	"github.com/phuongatemc/diffsnapcontroller/pkg/signals"
 )
 
 var (

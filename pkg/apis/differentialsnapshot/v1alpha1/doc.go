@@ -18,4 +18,4 @@ limitations under the License.
 // +groupName=differentialsnapshot.example.com
 
 // Package v1alpha1 is the v1alpha1 version of the API.
-package v1alpha1 // import "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
+package v1alpha1 // import "github.com/phuongatemc/diffsnapcontroller/pkg/apis/differentialsnapshot/v1alpha1"

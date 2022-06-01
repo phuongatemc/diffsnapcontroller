@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "example.com/differentialsnapshot/pkg/generated/clientset/versioned"
-	differentialsnapshot "example.com/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot"
-	internalinterfaces "example.com/differentialsnapshot/pkg/generated/informers/externalversions/internalinterfaces"
+	versioned "github.com/phuongatemc/diffsnapcontroller/pkg/generated/clientset/versioned"
+	differentialsnapshot "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions/differentialsnapshot"
+	internalinterfaces "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

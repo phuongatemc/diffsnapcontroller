@@ -19,8 +19,8 @@ limitations under the License.
 package differentialsnapshot
 
 import (
-	v1alpha1 "example.com/differentialsnapshot/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
-	internalinterfaces "example.com/differentialsnapshot/pkg/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
+	internalinterfaces "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

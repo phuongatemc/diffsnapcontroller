@@ -32,9 +32,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 
-	differentialsnapshot "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	"example.com/differentialsnapshot/pkg/generated/clientset/versioned/fake"
-	informers "example.com/differentialsnapshot/pkg/generated/informers/externalversions"
+	differentialsnapshot "github.com/phuongatemc/diffsnapcontroller/pkg/apis/differentialsnapshot/v1alpha1"
+	"github.com/phuongatemc/diffsnapcontroller/pkg/generated/clientset/versioned/fake"
+	informers "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions"
 )
 
 var (
