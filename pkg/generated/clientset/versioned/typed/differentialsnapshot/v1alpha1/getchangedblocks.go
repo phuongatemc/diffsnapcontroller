@@ -22,8 +22,8 @@ import (
 	"context"
 	"time"
 
-	v1alpha1 "example.com/differentialsnapshot/pkg/apis/differentialsnapshot/v1alpha1"
-	scheme "example.com/differentialsnapshot/pkg/generated/clientset/versioned/scheme"
+	v1alpha1 "github.com/phuongatemc/diffsnapcontroller/pkg/apis/differentialsnapshot/v1alpha1"
+	scheme "github.com/phuongatemc/diffsnapcontroller/pkg/generated/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

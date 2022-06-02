@@ -26,13 +26,13 @@ CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./vendor/k8s.io/code-
 #                  k8s.io/kubernetes. The output-base is needed for the generators to output into the vendor dir
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 bash "${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
-  example.com/differentialsnapshot/pkg/generated example.com/differentialsnapshot/pkg/apis \
+  github.com/phuongatemc/diffsnapcontroller/pkg/generated github.com/phuongatemc/diffsnapcontroller/pkg/apis \
   differentialsnapshot:v1alpha1 \
   --output-base "$(dirname "${BASH_SOURCE[0]}")/../" \
   --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
 
-cp -R example.com/differentialsnapshot/pkg/generated/* pkg/generated/
-cp -R example.com/differentialsnapshot/pkg/apis/* pkg/apis/
+cp -R github.com/phuongatemc/diffsnapcontroller/pkg/generated/* pkg/generated/
+cp -R github.com/phuongatemc/diffsnapcontroller/pkg/apis/* pkg/apis/
 rm -rf example.com
 
 # To use your own boilerplate text append:

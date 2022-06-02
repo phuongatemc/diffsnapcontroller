@@ -21,7 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"example.com/differentialsnapshot/pkg/apis/differentialsnapshot"
+	"github.com/phuongatemc/diffsnapcontroller/pkg/apis/differentialsnapshot"
 )
 
 // SchemeGroupVersion is group version used to register these objects
