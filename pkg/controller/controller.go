@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
+	snapshotclientset "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,33 +37,30 @@ import (
 	"k8s.io/klog/v2"
 
 	differentialsnapshotv1alpha1 "github.com/phuongatemc/diffsnapcontroller/pkg/apis/differentialsnapshot/v1alpha1"
-	changeblockservice "github.com/phuongatemc/diffsnapcontroller/pkg/changedblockservice/changed_block_service"
 	clientset "github.com/phuongatemc/diffsnapcontroller/pkg/generated/clientset/versioned"
 	informers "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions/differentialsnapshot/v1alpha1"
 	listers "github.com/phuongatemc/diffsnapcontroller/pkg/generated/listers/differentialsnapshot/v1alpha1"
 )
 
-const controllerAgentName = "differentialsnapshot"
-
 const (
-	// SuccessSynced is used as part of the Event 'reason' when a GetChangedBlocks is synced
+	controllerAgentName = "differentialsnapshot"
+	// SuccessSynced is used as part of the Event 'reason' when a VolumeSnapshotDelta is synced
 	SuccessSynced = "Synced"
-	// MessageResourceSynced is the message used for an Event fired when a GetChangedBlocks
+	// MessageResourceSynced is the message used for an Event fired when a VolumeSnapshotDelta
 	// is synced successfully
-	MessageResourceSynced = "GetChangedBlocks synced successfully"
+	MessageResourceSynced = "VolumeSnapshotDelta synced successfully"
+	BaseURL               = "testURL" // "podDNSName:portNumber"
 )
 
-// Controller is the controller implementation for GetChangedBlocks resources
+// Controller is the controller implementation for VolumeSnapshotDelta resources
 type Controller struct {
 	// kubeclientset is a standard kubernetes clientset
 	kubeclientset kubernetes.Interface
 	// sampleclientset is a clientset for our own API group
-	diffSnapClient clientset.Interface
-
-	getChangedBlocksesLister listers.GetChangedBlocksLister
-	getChangedBlocksesSynced cache.InformerSynced
-
-	differentialSnapshotClient changeblockservice.DifferentialSnapshotClient
+	diffSnapClient            clientset.Interface
+	snapshotClientSet         snapshotclientset.Interface
+	volumeSnapshotDeltaLister listers.VolumeSnapshotDeltaLister
+	volumeSnapshotDeltaSynced cache.InformerSynced
 
 	// workqueue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -78,8 +77,8 @@ type Controller struct {
 func NewController(
 	kubeclientset kubernetes.Interface,
 	diffSnapClient clientset.Interface,
-	getChangedBlocksInformer informers.GetChangedBlocksInformer,
-	cbtService changeblockservice.DifferentialSnapshotClient) *Controller {
+	snapshotClientSet snapshotclientset.Interface,
+	volumeSnapshotDeltaInformer informers.VolumeSnapshotDeltaInformer) *Controller {
 
 	// Create event broadcaster
 	// Add differentialsnapshot types to the default Kubernetes Scheme so Events can be
@@ -92,21 +91,21 @@ func NewController(
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		kubeclientset:              kubeclientset,
-		diffSnapClient:             diffSnapClient,
-		getChangedBlocksesLister:   getChangedBlocksInformer.Lister(),
-		getChangedBlocksesSynced:   getChangedBlocksInformer.Informer().HasSynced,
-		workqueue:                  workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "GetChangedBlockses"),
-		recorder:                   recorder,
-		differentialSnapshotClient: cbtService,
+		kubeclientset:             kubeclientset,
+		diffSnapClient:            diffSnapClient,
+		snapshotClientSet:         snapshotClientSet,
+		volumeSnapshotDeltaLister: volumeSnapshotDeltaInformer.Lister(),
+		volumeSnapshotDeltaSynced: volumeSnapshotDeltaInformer.Informer().HasSynced,
+		workqueue:                 workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "VolumeSnapshotDelta"),
+		recorder:                  recorder,
 	}
 
 	klog.Info("Setting up event handlers")
-	// Set up an event handler for when GetChangedBlocks resources change
-	getChangedBlocksInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueGetChangedBlocks,
+	// Set up an event handler for when VolumeSnapshotDelta resources change
+	volumeSnapshotDeltaInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.enqueueVolumeSnapshotDelta,
 		UpdateFunc: func(old, new interface{}) {
-			controller.enqueueGetChangedBlocks(new)
+			controller.enqueueVolumeSnapshotDelta(new)
 		},
 	})
 
@@ -122,16 +121,16 @@ func (c *Controller) Run(workers int, stopCh <-chan struct{}) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	klog.Info("Starting GetChangedBlocks controller")
+	klog.Info("Starting VolumeSnapshotDelta controller")
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.getChangedBlocksesSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.volumeSnapshotDeltaSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
 	klog.Info("Starting workers")
-	// Launch two workers to process GetChangedBlocks resources
+	// Launch two workers to process VolumeSnapshotDelta resources
 	for i := 0; i < workers; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
@@ -185,7 +184,7 @@ func (c *Controller) processNextWorkItem() bool {
 			return nil
 		}
 		// Run the syncHandler, passing it the namespace/name string of the
-		// GetChangedBlocks resource to be synced.
+		// VolumeSnapshotDelta resource to be synced.
 		if err := c.syncHandler(key); err != nil {
 			// Put the item back on the workqueue to handle any transient errors.
 			c.workqueue.AddRateLimited(key)
@@ -207,7 +206,7 @@ func (c *Controller) processNextWorkItem() bool {
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
-// converge the two. It then updates the Status block of the GetChangedBlocks resource
+// converge the two. It then updates the Status block of the VolumeSnapshotDelta resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(key string) error {
 	// Convert the namespace/name string into a distinct namespace and name
@@ -217,77 +216,150 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
-	// Get the GetChangedBlocks resource with this namespace/name
-	getChangedBlocks, err := c.getChangedBlocksesLister.GetChangedBlockses(namespace).Get(name)
+	// Get the VolumeSnapshotDelta resource with this namespace/name
+	volumeSnapshotDelta, err := c.volumeSnapshotDeltaLister.VolumeSnapshotDeltas(namespace).Get(name)
 	if err != nil {
-		// The GetChangedBlocks resource may no longer exist, in which case we stop
+		// The VolumeSnapshotDelta resource may no longer exist, in which case we stop
 		// processing.
 		if errors.IsNotFound(err) {
-			utilruntime.HandleError(fmt.Errorf("getChangedBlocks '%s' in work queue no longer exists", key))
+			utilruntime.HandleError(fmt.Errorf("volumeSnapshotDelta '%s' in work queue no longer exists", key))
 			return nil
 		}
 
 		return err
 	}
-	klog.Infof("Processing GetChangedBlocks %s", getChangedBlocks.Name)
-	// TODO: add processing GetChangedBlocks here
-	cbs, err := c.differentialSnapshotClient.GetChangedBlocks(context.TODO(), &changeblockservice.GetChangedBlocksRequest{
-		SnapshotBase:   getChangedBlocks.Spec.SnapshotBase,
-		SnapshotTarget: getChangedBlocks.Spec.SnapshotTarget,
-		VolumeID:       getChangedBlocks.Spec.VolumeId,
-		StartOfOffset:  getChangedBlocks.Spec.StartOffset,
-		MaxEntries:     getChangedBlocks.Spec.MaxEntries,
-		Parameters:     getChangedBlocks.Spec.Parameters,
-	})
+	klog.Infof("Processing VolumeSnapshotDelta %s", volumeSnapshotDelta.Name)
+	targetVS, targetVSC, baseVS, baseVSC, driverName, err := validateVolumeSnapshotDelta(
+		context.TODO(), c.snapshotClientSet, volumeSnapshotDelta)
 	if err != nil {
 		klog.Errorf("Unable to get changed blocks from service: %v", err)
-		getChangedBlocks.Status.State = "Failed"
-		getChangedBlocks.Status.Error = err.Error()
-		getChangedBlocks.Status.ChangeBlockList = []differentialsnapshotv1alpha1.ChangedBlock{}
-		getChangedBlocks, err = c.updateGetChangedBlocksStatus(getChangedBlocks)
+		volumeSnapshotDelta.Status.State = "Failed"
+		volumeSnapshotDelta.Status.Error = err.Error()
+		volumeSnapshotDelta, err = c.updateVolumeSnapshotDeltaStatus(volumeSnapshotDelta)
 		if err != nil {
-			klog.Errorf("unable to update the CBT status: %v", err)
+			klog.Errorf("unable to update the VolumeSnapshotDelta status: %v", err)
 			return err
 		}
 		return err
 	}
-	klog.Infof("Processed GetChangedBlocks %#v", cbs)
-	v1alpha1ChangeBlocks := []differentialsnapshotv1alpha1.ChangedBlock{}
-	for _, cb := range cbs.ChangedBlocks {
-		v1alpha1ChangeBlocks = append(v1alpha1ChangeBlocks, differentialsnapshotv1alpha1.ChangedBlock{
-			Offset:  cb.Offset,
-			Size:    cb.Size,
-			Context: cb.Context,
-			ZeroOut: cb.ZeroOut,
-		})
+	resource := &VolumeSnapshotDeltaResource{
+		TargetVS:  targetVS,
+		TargetVSC: targetVSC,
+		BaseVS:    baseVS,
+		BaseVSC:   baseVSC,
+		Driver:    driverName,
 	}
-	getChangedBlocks.Status.State = "Success"
-	getChangedBlocks.Status.ChangeBlockList = v1alpha1ChangeBlocks
-	klog.Infof("Processed GetChangedBlocks name: %v, output: %v", getChangedBlocks.Name, getChangedBlocks)
-	getChangedBlocks, err = c.updateGetChangedBlocksStatus(getChangedBlocks)
+	DSMap[volumeSnapshotDelta.Name] = resource
+
+	klog.Infof("Processed VolumeSnapshotDelta %s", volumeSnapshotDelta.Name)
+	volumeSnapshotDelta.Status.State = "Success"
+	volumeSnapshotDelta.Status.StreamURL = fmt.Sprintf("%s/%s/%s", BaseURL,
+		volumeSnapshotDelta.Namespace, volumeSnapshotDelta.Name)
+	klog.Infof("Processed VolumeSnapshotDelta name: %v, output: %v", volumeSnapshotDelta.Name, volumeSnapshotDelta)
+
+	volumeSnapshotDelta.Status.State = "Success"
+	klog.Infof("Processed VolumeSnapshotDelta name: %v, output: %v", volumeSnapshotDelta.Name, volumeSnapshotDelta)
+	volumeSnapshotDelta, err = c.updateVolumeSnapshotDeltaStatus(volumeSnapshotDelta)
 	if err != nil {
 		klog.Errorf("unable to update the CBT status: %v", err)
 		return err
 	}
 
-	c.recorder.Event(getChangedBlocks, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
+	c.recorder.Event(volumeSnapshotDelta, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 
 	return err
 }
 
-func (c *Controller) updateGetChangedBlocksStatus(
-	getChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks) (
-	updatedGetChangedBlocks *differentialsnapshotv1alpha1.GetChangedBlocks, err error) {
-	getChangedBlocksCopy := getChangedBlocks.DeepCopy()
-	updatedGetChangedBlocks, err = c.diffSnapClient.DifferentialsnapshotV1alpha1().GetChangedBlockses(
-		getChangedBlocks.Namespace).UpdateStatus(context.TODO(), getChangedBlocksCopy, metav1.UpdateOptions{})
+type VolumeSnapshotDeltaResource struct {
+	Driver    string
+	TargetVS  *snapshotv1.VolumeSnapshot
+	TargetVSC *snapshotv1.VolumeSnapshotContent
+	BaseVS    *snapshotv1.VolumeSnapshot
+	BaseVSC   *snapshotv1.VolumeSnapshotContent
+}
+
+// Shared resource map between DiffSnap Controller and DiffSnap Service/Listener.
+var DSMap map[string]*VolumeSnapshotDeltaResource
+
+func init() {
+	DSMap = make(map[string]*VolumeSnapshotDeltaResource)
+}
+
+func validateVolumeSnapshotDelta(
+	ctx context.Context,
+	snapshotClientSet snapshotclientset.Interface,
+	volumeSnapshotDelta *differentialsnapshotv1alpha1.VolumeSnapshotDelta) (
+	targetVS *snapshotv1.VolumeSnapshot, targetVSC *snapshotv1.VolumeSnapshotContent,
+	baseVS *snapshotv1.VolumeSnapshot, baseVSC *snapshotv1.VolumeSnapshotContent, driver string, err error) {
+	if volumeSnapshotDelta.Spec.TargetVolumeSnapshotName == "" {
+		err = fmt.Errorf("Missing TargetVolumeSnapshotName.")
+		return
+	}
+	namespace := volumeSnapshotDelta.Namespace
+	// fetch VolumeSnapshot, VolumeSnapshotContent and validate them
+	targetVS, targetVSC, err = validateVolumeSnapshot(ctx, snapshotClientSet, namespace, volumeSnapshotDelta.Spec.TargetVolumeSnapshotName)
+	if err != nil {
+		return
+	}
+	driver = targetVSC.Spec.Driver
+	if driver == "" {
+		err = fmt.Errorf("VolumeSnapshotContent '%s' missing Driver.", targetVSC.Name)
+	}
+	if volumeSnapshotDelta.Spec.BaseVolumeSnapshotName != "" {
+		baseVS, baseVSC, err = validateVolumeSnapshot(ctx, snapshotClientSet, namespace, volumeSnapshotDelta.Spec.BaseVolumeSnapshotName)
+	}
+
+	err = validateCSIDriver(driver)
+
 	return
 }
 
-// enqueueGetChangedBlocks takes a GetChangedBlocks resource and converts it into a namespace/name
+func validateCSIDriver(driveName string) (err error) {
+	// TODO: validate CSI Driver to make sure it supports DIFFERENTIAL_SNAPSHOT
+	return
+}
+
+func validateVolumeSnapshot(
+	ctx context.Context,
+	snapshotClientSet snapshotclientset.Interface,
+	namespace string,
+	volumeSnapshotName string) (vs *snapshotv1.VolumeSnapshot, vsc *snapshotv1.VolumeSnapshotContent, err error) {
+
+	klog.Infof("Validating VolumeSnapshot '%s'...", volumeSnapshotName)
+	vs, err = snapshotClientSet.SnapshotV1().VolumeSnapshots(namespace).Get(ctx, volumeSnapshotName, metav1.GetOptions{})
+	if err != nil {
+		err = fmt.Errorf("Unable to retrieve VolumeSnapshot '%s': %s.", volumeSnapshotName, err)
+		return
+	}
+	klog.Infof("VolumeSnapshot '%s' is valid.", volumeSnapshotName)
+	snapshotContentName := vs.Status.BoundVolumeSnapshotContentName
+	if snapshotContentName == nil {
+		err = fmt.Errorf("VolumeSnapshot '%s' missing BoundVolumeSnapshotContentName.", vs.Name)
+		return
+	}
+	klog.Infof("Validating VolumeSnapshotContent '%s'...", *snapshotContentName)
+	vsc, err = snapshotClientSet.SnapshotV1().VolumeSnapshotContents().Get(ctx, *snapshotContentName, metav1.GetOptions{})
+	if err != nil {
+		err = fmt.Errorf("Unable to get volumesnapshotcontent '%s': %s", *snapshotContentName, err)
+		return
+	}
+	klog.Infof("VolumeSnapshotContent '%s' is valid.", *snapshotContentName)
+	return
+}
+
+func (c *Controller) updateVolumeSnapshotDeltaStatus(
+	volumeSnapshotDelta *differentialsnapshotv1alpha1.VolumeSnapshotDelta) (
+	updatedVolumeSnapshotDelta *differentialsnapshotv1alpha1.VolumeSnapshotDelta, err error) {
+	volumeSnapshotDeltaCopy := volumeSnapshotDelta.DeepCopy()
+	updatedVolumeSnapshotDelta, err = c.diffSnapClient.DifferentialsnapshotV1alpha1().VolumeSnapshotDeltas(
+		volumeSnapshotDelta.Namespace).UpdateStatus(context.TODO(), volumeSnapshotDeltaCopy, metav1.UpdateOptions{})
+	return
+}
+
+// enqueueVolumeSnapshotDelta takes a VolumeSnapshotDelta resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
-// passed resources of any type other than GetChangedBlocks.
-func (c *Controller) enqueueGetChangedBlocks(obj interface{}) {
+// passed resources of any type other than VolumeSnapshotDelta.
+func (c *Controller) enqueueVolumeSnapshotDelta(obj interface{}) {
 	var key string
 	var err error
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {

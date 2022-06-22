@@ -28,7 +28,7 @@ import (
 
 type DifferentialsnapshotV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	GetChangedBlocksesGetter
+	VolumeSnapshotDeltasGetter
 }
 
 // DifferentialsnapshotV1alpha1Client is used to interact with features provided by the differentialsnapshot.example.com group.
@@ -36,8 +36,8 @@ type DifferentialsnapshotV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *DifferentialsnapshotV1alpha1Client) GetChangedBlockses(namespace string) GetChangedBlocksInterface {
-	return newGetChangedBlockses(c, namespace)
+func (c *DifferentialsnapshotV1alpha1Client) VolumeSnapshotDeltas(namespace string) VolumeSnapshotDeltaInterface {
+	return newVolumeSnapshotDeltas(c, namespace)
 }
 
 // NewForConfig creates a new DifferentialsnapshotV1alpha1Client for the given config.

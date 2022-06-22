@@ -24,8 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// GetChangedBlockses returns a GetChangedBlocksInformer.
-	GetChangedBlockses() GetChangedBlocksInformer
+	// VolumeSnapshotDeltas returns a VolumeSnapshotDeltaInformer.
+	VolumeSnapshotDeltas() VolumeSnapshotDeltaInformer
 }
 
 type version struct {
@@ -39,7 +39,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// GetChangedBlockses returns a GetChangedBlocksInformer.
-func (v *version) GetChangedBlockses() GetChangedBlocksInformer {
-	return &getChangedBlocksInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// VolumeSnapshotDeltas returns a VolumeSnapshotDeltaInformer.
+func (v *version) VolumeSnapshotDeltas() VolumeSnapshotDeltaInformer {
+	return &volumeSnapshotDeltaInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package main
 
 import (
 	"flag"
-	"os"
 	"time"
 
-	"github.com/kubernetes-csi/csi-lib-utils/connection"
-	"github.com/kubernetes-csi/csi-lib-utils/metrics"
+	snapshotclientset "github.com/kubernetes-csi/external-snapshotter/client/v4/clientset/versioned"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -31,7 +29,6 @@ import (
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
 	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	changeblockservice "github.com/phuongatemc/diffsnapcontroller/pkg/changedblockservice/changed_block_service"
 	"github.com/phuongatemc/diffsnapcontroller/pkg/controller"
 	clientset "github.com/phuongatemc/diffsnapcontroller/pkg/generated/clientset/versioned"
 	informers "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions"
@@ -73,25 +70,13 @@ func main() {
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	diffsnapInformerFactory := informers.NewSharedInformerFactory(diffsnapClient, time.Second*30)
 
-	metricsManager := metrics.NewCSIMetricsManagerForSidecar("cbt-service")
-
 	klog.Infof("csi address: %v", csiAddress)
-
-	//create client
-	csiConn, err := connection.Connect(
-		csiAddress,
-		metricsManager,
-		connection.OnConnectionLoss(connection.ExitOnConnectionLoss()))
+	snapshotClientSet, err := snapshotclientset.NewForConfig(cfg)
 	if err != nil {
-		klog.Errorf("error connecting to CSI driver: %v", err)
-		os.Exit(1)
+		klog.Fatalf("unable to get Snapshot ClientSet %v", err.Error())
 	}
-
-	cbtClient := changeblockservice.NewDifferentialSnapshotClient(csiConn)
-
-	controller := controller.NewController(kubeClient, diffsnapClient,
-		diffsnapInformerFactory.Differentialsnapshot().V1alpha1().GetChangedBlockses(),
-		cbtClient)
+	controller := controller.NewController(kubeClient, diffsnapClient, snapshotClientSet,
+		diffsnapInformerFactory.Differentialsnapshot().V1alpha1().VolumeSnapshotDeltas())
 
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
 	// Start method is non-blocking and runs all registered informers in a dedicated goroutine.

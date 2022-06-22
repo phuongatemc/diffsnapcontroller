@@ -1,0 +1,10 @@
+apiVersion: differentialsnapshot.example.com/v1alpha1
+kind: VolumeSnapshotDelta
+metadata:
+  name: testing
+  namespace: testns
+spec:
+  baseVolumeSnapshotName: vs87hxj
+  targetVolumeSnapshotName: vsjx95j
+  mode: Block
+  maxEntries: 1000000

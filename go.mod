@@ -5,14 +5,15 @@ module github.com/phuongatemc/diffsnapcontroller
 go 1.16
 
 require (
-	github.com/aws/aws-sdk-go v1.43.45
-	github.com/kubernetes-csi/csi-lib-utils v0.11.0
+	github.com/aws/aws-sdk-go v1.43.45 // indirect
+	github.com/kubernetes-csi/csi-lib-utils v0.11.0 // indirect
+	github.com/kubernetes-csi/external-snapshotter/client/v4 v4.2.0
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.27.1
 	k8s.io/api v0.22.0
 	k8s.io/apimachinery v0.22.0
 	k8s.io/client-go v0.22.0
-	k8s.io/code-generator v0.18.2
+	k8s.io/code-generator v0.19.0
 	k8s.io/klog/v2 v2.60.1
 )
 

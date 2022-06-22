@@ -1,8 +1,0 @@
-apiVersion: differentialsnapshot.k8s.io/v1alpha1
-kind: GetChangedBlocks
-metadata:
-  name: testing
-spec:
-  snapshotBase: snap-0ce8d7f58c8b1b5b1
-  snapshotTarget: snap-0e8831de19cac2852
-  maxEntries: 1000000

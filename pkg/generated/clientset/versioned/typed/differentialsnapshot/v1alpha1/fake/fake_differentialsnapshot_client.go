@@ -28,8 +28,8 @@ type FakeDifferentialsnapshotV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeDifferentialsnapshotV1alpha1) GetChangedBlockses(namespace string) v1alpha1.GetChangedBlocksInterface {
-	return &FakeGetChangedBlockses{c, namespace}
+func (c *FakeDifferentialsnapshotV1alpha1) VolumeSnapshotDeltas(namespace string) v1alpha1.VolumeSnapshotDeltaInterface {
+	return &FakeVolumeSnapshotDeltas{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
