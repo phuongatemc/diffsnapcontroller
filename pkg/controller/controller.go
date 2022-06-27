@@ -243,11 +243,12 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 	resource := &VolumeSnapshotDeltaResource{
-		TargetVS:  targetVS,
-		TargetVSC: targetVSC,
-		BaseVS:    baseVS,
-		BaseVSC:   baseVSC,
-		Driver:    driverName,
+		TargetVS:   targetVS,
+		TargetVSC:  targetVSC,
+		BaseVS:     baseVS,
+		BaseVSC:    baseVSC,
+		Driver:     driverName,
+		MaxEntries: volumeSnapshotDelta.Spec.MaxEntries,
 	}
 	DSMap[volumeSnapshotDelta.Name] = resource
 
@@ -271,11 +272,12 @@ func (c *Controller) syncHandler(key string) error {
 }
 
 type VolumeSnapshotDeltaResource struct {
-	Driver    string
-	TargetVS  *snapshotv1.VolumeSnapshot
-	TargetVSC *snapshotv1.VolumeSnapshotContent
-	BaseVS    *snapshotv1.VolumeSnapshot
-	BaseVSC   *snapshotv1.VolumeSnapshotContent
+	Driver     string
+	TargetVS   *snapshotv1.VolumeSnapshot
+	TargetVSC  *snapshotv1.VolumeSnapshotContent
+	BaseVS     *snapshotv1.VolumeSnapshot
+	BaseVSC    *snapshotv1.VolumeSnapshotContent
+	MaxEntries uint64
 }
 
 // Shared resource map between DiffSnap Controller and DiffSnap Service/Listener.

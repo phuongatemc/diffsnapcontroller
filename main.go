@@ -32,6 +32,7 @@ import (
 	"github.com/phuongatemc/diffsnapcontroller/pkg/controller"
 	clientset "github.com/phuongatemc/diffsnapcontroller/pkg/generated/clientset/versioned"
 	informers "github.com/phuongatemc/diffsnapcontroller/pkg/generated/informers/externalversions"
+	"github.com/phuongatemc/diffsnapcontroller/pkg/listener"
 	"github.com/phuongatemc/diffsnapcontroller/pkg/signals"
 )
 
@@ -77,6 +78,15 @@ func main() {
 	}
 	controller := controller.NewController(kubeClient, diffsnapClient, snapshotClientSet,
 		diffsnapInformerFactory.Differentialsnapshot().V1alpha1().VolumeSnapshotDeltas())
+
+	// create a new listener service
+	listener, err := listener.NewListener(csiAddress)
+	if err != nil {
+		klog.Fatalf("Error creating a listener service: %s", err.Error())
+	}
+
+	// start the listener service in a separate thread
+	go listener.StartListener()
 
 	// notice that there is no need to run Start methods in a separate goroutine. (i.e. go kubeInformerFactory.Start(stopCh)
 	// Start method is non-blocking and runs all registered informers in a dedicated goroutine.
